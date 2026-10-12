@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CyberLab Control Panel</title>
+  <style>
+    :root { color-scheme: dark; --bg: #071014; --panel: #0d1b20; --panel-2: #10252a; --text: #e6fff4; --muted: #86a89f; --line: #1d3c3a; --green: #42f5a7; --amber: #ffc857; --red: #ff6b7a; --cyan: #72e6ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top right, #14332f 0, transparent 42%), var(--bg); color: var(--text); font: 15px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    main { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 36px 0 48px; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 26px; }
+    .eyebrow { color: var(--green); letter-spacing: .12em; text-transform: uppercase; font-size: 12px; }
+    h1 { margin: 8px 0 6px; font: 700 clamp(28px, 4vw, 46px)/1.05 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.04em; }
+    h2 { margin: 0 0 10px; font: 700 19px ui-sans-serif, system-ui, sans-serif; }
+    p { color: var(--muted); margin: 0; }
+    .grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+    .panel { background: color-mix(in srgb, var(--panel) 93%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-shadow: 0 18px 60px #0003; }
+    .wide { grid-column: 1 / -1; }
+    .status-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 20px; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 18px currentColor; }
+    .dot.ok { background: var(--green); color: var(--green); }
+    .dot.bad { background: var(--red); color: var(--red); }
+    .status-text { color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    button { border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); color: var(--text); padding: 11px 14px; cursor: pointer; font: inherit; transition: .18s ease; }
+    button:hover { border-color: var(--green); transform: translateY(-1px); }
+    button.primary { background: var(--green); color: #062018; border-color: var(--green); font-weight: 800; }
+    button.danger { color: #ffd7dc; border-color: #69333d; }
+    button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+    .badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; color: var(--cyan); border: 1px solid #265866; font-size: 12px; }
+    .lesson { display: grid; gap: 12px; }
+    .lesson-item { display: flex; gap: 12px; align-items: start; color: var(--muted); }
+    .lesson-num { color: var(--green); min-width: 24px; }
+    .terminal { background: #040909; border: 1px solid #1e3d39; border-radius: 12px; min-height: 300px; max-height: 480px; overflow: auto; padding: 14px; }
+    .line { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 5px; }
+    .line.command { color: var(--cyan); }
+    .line.stdout { color: #b9d8c9; }
+    .line.stderr, .line.error { color: var(--red); }
+    .line.ready { color: var(--green); }
+    .line.info { color: var(--amber); }
+    .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+    a { color: var(--cyan); }
+    code { color: var(--cyan); }
+    @media (max-width: 800px) { header { display: block; } .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">local / isolated / educational</div>
+        <h1>CyberLab Control Panel</h1>
+        <p>Kurulum, container durumu ve canlı terminal akışı tek ekranda.</p>
+      </div>
+      <span class="badge">v0.1 • localhost only</span>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Lab durumu</h2>
+        <div class="status-row"><span id="dot" class="dot"></span><span id="status" class="status-text">Kontrol bekleniyor…</span></div>
+        <div class="actions">
+          <button id="check" class="primary">Docker’ı kontrol et</button>
+          <button id="install">Docker’ı kur</button>
+          <button id="start" disabled>Juice Shop’u başlat</button>
+          <button id="stop" class="danger" disabled>Labı durdur</button>
+        </div>
+        <p id="link" style="margin-top:16px"></p>
+      </article>
+
+      <article class="panel lesson">
+        <h2>İlk ders: güvenli keşif</h2>
+        <div class="lesson-item"><span class="lesson-num">01</span><span>Önce ortamı doğrula: Docker daemon çalışıyor mu?</span></div>
+        <div class="lesson-item"><span class="lesson-num">02</span><span>Bilerek zafiyetli Juice Shop’u yalnızca localhost’ta aç.</span></div>
+        <div class="lesson-item"><span class="lesson-num">03</span><span>Tarayıcıdan uygulamayı gözlemle; sonraki adımda HTTP akışını inceleyeceğiz.</span></div>
+      </article>
+
+      <article class="panel wide">
+        <div class="meta"><span>LIVE TERMINAL STREAM</span><span id="clock">bağlanıyor…</span></div>
+        <div id="terminal" class="terminal" aria-live="polite"></div>
+      </article>
+    </section>
+  </main>
+  <script>
+    const terminal = document.querySelector('#terminal');
+    const status = document.querySelector('#status');
+    const dot = document.querySelector('#dot');
+    const link = document.querySelector('#link');
+    const start = document.querySelector('#start');
+    const stop = document.querySelector('#stop');
+    const install = document.querySelector('#install');
+    const clock = document.querySelector('#clock');
+
+    function addLine(event) {
+      if (event.type === 'history') return event.events.forEach(addLine);
+      const row = document.createElement('div');
+      row.className = `line ${event.type}`;
+      row.textContent = `[${event.time}] ${event.message}`;
+      terminal.append(row);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function setDockerState(data) {
+      const ready = Boolean(data?.docker?.running);
+      dot.className = `dot ${ready ? 'ok' : 'bad'}`;
+      status.textContent = ready ? `Docker hazır • v${data.docker.version}` : 'Docker hazır değil';
+      start.disabled = !ready || Boolean(data.container?.running);
+      stop.disabled = !ready || !Boolean(data.container?.running);
+      if (data.container?.running) link.innerHTML = `Lab adresi: <a href="${data.url}" target="_blank">${data.url}</a>`;
+    }
+
+    const events = new EventSource('/api/events');
+    events.onopen = () => { clock.textContent = 'canlı bağlantı'; };
+    events.onmessage = (message) => {
+      const event = JSON.parse(message.data);
+      addLine(event);
+      if (event.type === 'ready' && event.url) link.innerHTML = `Lab adresi: <a href="${event.url}" target="_blank">${event.url}</a>`;
+    };
+    events.onerror = () => { clock.textContent = 'bağlantı koptu'; };
+
+    async function post(url) {
+      const response = await fetch(url, { method: 'POST' });
+      return response.json();
+    }
+    document.querySelector('#check').onclick = async () => setDockerState(await post('/api/check'));
+    install.onclick = () => post('/api/system/install-docker');
+    start.onclick = () => post('/api/lab/start');
+    stop.onclick = () => post('/api/lab/stop');
+
+    fetch('/api/status').then((response) => response.json()).then(setDockerState);
+  </script>
+</body>
+</html>
